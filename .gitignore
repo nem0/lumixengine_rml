@@ -28,3 +28,5 @@
 *.exe
 *.out
 *.app
+
+tmp/
