@@ -83,8 +83,7 @@ struct RMLSystem : IPlugin {
 		Rml::LoadFontFace("rml/Delicious-Roman.otf");
 	}
 
-	void createScenes(Universe& universe) override { RMLScene::create(*this, m_engine, universe); }
-	void destroyScene(IScene* scene) override { LUMIX_DELETE(m_engine.getAllocator(), scene); }
+	void createScenes(Universe& universe) override { universe.addScene(RMLScene::create(*this, m_engine, universe)); }
 
 	Engine& m_engine;
 	SystemInterface m_system_interface;

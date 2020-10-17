@@ -129,7 +129,7 @@ struct RenderInterface : Rml::RenderInterface {
 	}
 
 	~RenderInterface() {
-		if (m_shader) m_shader->getResourceManager().unload(*m_shader);
+		if (m_shader) m_shader->decRefCount();
 	}
 
 	// Rml::CompiledGeometryHandle CompileGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::TextureHandle texture) { return {}; }
@@ -183,14 +183,14 @@ struct RenderInterface : Rml::RenderInterface {
 		m_job->m_program_3D = m_shader->getProgram(decl, m_3D_define);
 	}
 
-	bool beginRender(const Vec2& canvas_size, gpu::BufferHandle ub, bool is_3D, const Vec3& pos, const Quat& rot, IAllocator& allocator) {
+	bool beginRender(Renderer& renderer, const Vec2& canvas_size, gpu::BufferHandle ub, bool is_3D, const Vec3& pos, const Quat& rot, IAllocator& allocator) {
 		if (!m_shader->isReady()) return false;
 
 		m_is_3d = is_3D;
 		m_pos = pos;
 		m_rot = rot;
-		LUMIX_DELETE(allocator, m_job); // in case job was not consumed
-		m_job = LUMIX_NEW(allocator, RMLRenderJob)(allocator);
+		
+		m_job = &renderer.createJob<RMLRenderJob>(allocator);
 		m_job->m_ub = ub;
 		m_job->m_canvas_size = canvas_size;
 		m_scissor_enabled = false;
@@ -235,7 +235,7 @@ struct RMLSceneImpl : RMLScene {
 		StaticString<64> context_name((u64)this, "#", entity.index);
 		c.context = Rml::CreateContext(context_name.data, Rml::Vector2i(800, 600), &m_render_interface);
 		Rml::ElementDocument* doc = c.context->LoadDocument("rml/demo.rml");
-		doc->Show();
+		if (doc) doc->Show();
 		m_universe.onComponentCreated(entity, RML_CANVAS_TYPE, this);
 	}
 
@@ -274,11 +274,11 @@ struct RMLSceneImpl : RMLScene {
 			const Vec2 canvas_size((float)vp.w, (float)vp.h);
 			canvas.context->SetDimensions({vp.w, vp.h});
 			const Transform& tr = m_universe.getTransform(canvas.entity);
-			if (m_render_interface.beginRender(canvas_size, ub, canvas.is_3d, (tr.pos - vp.pos).toFloat(), tr.rot, renderer->getAllocator())) {
+			if (m_render_interface.beginRender(*renderer, canvas_size, ub, canvas.is_3d, (tr.pos - vp.pos).toFloat(), tr.rot, renderer->getAllocator())) {
 				canvas.context->Render();
 				m_render_interface.endRender();
 
-				renderer->queue(m_render_interface.m_job, 0);
+				renderer->queue(*m_render_interface.m_job, 0);
 				m_render_interface.m_job = nullptr;
 			}
 		}
@@ -370,10 +370,8 @@ struct RMLSceneImpl : RMLScene {
 	Array<Canvas> m_canvases;
 };
 
-RMLScene* RMLScene::create(IPlugin& plugin, Engine& engine, Universe& universe) {
-	RMLScene* scene = LUMIX_NEW(engine.getAllocator(), RMLSceneImpl)(plugin, engine, universe);
-	universe.addScene(scene);
-	return scene;
+UniquePtr<RMLScene> RMLScene::create(IPlugin& plugin, Engine& engine, Universe& universe) {
+	return UniquePtr<RMLSceneImpl>::create(engine.getAllocator(), plugin, engine, universe);
 }
 
 } // namespace Lumix
