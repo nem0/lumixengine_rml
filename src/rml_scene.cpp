@@ -148,6 +148,7 @@ struct RenderInterface : Rml::RenderInterface {
 	bool LoadTexture(Rml::TextureHandle& texture_handle, Rml::Vector2i& texture_dimensions, const Rml::String& source) override {
 		Texture* t = m_engine.getResourceManager().load<Texture>(Path(source.c_str()));
 		// unfortunately we have to do this until rml has API to query textures
+		// TODO use Rml::GetTextureSourceList();
 		while (t->isEmpty()) {
 			m_engine.getFileSystem().processCallbacks();
 			OS::sleep(1);

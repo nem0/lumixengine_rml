@@ -170,6 +170,7 @@ struct DefaultInstancers {
 
 	// Data binding views
 	DataViewInstancerDefault<DataViewAttribute> data_view_attribute;
+	DataViewInstancerDefault<DataViewAttributeIf> data_view_attribute_if;
 	DataViewInstancerDefault<DataViewClass> data_view_class;
 	DataViewInstancerDefault<DataViewIf> data_view_if;
 	DataViewInstancerDefault<DataViewVisible> data_view_visible;
@@ -259,6 +260,7 @@ bool Factory::Initialise()
 
 	// Data binding views
 	RegisterDataViewInstancer(&default_instancers->data_view_attribute,      "attr",    false);
+	RegisterDataViewInstancer(&default_instancers->data_view_attribute_if,   "attrif",  false);
 	RegisterDataViewInstancer(&default_instancers->data_view_class,          "class",   false);
 	RegisterDataViewInstancer(&default_instancers->data_view_if,             "if",      false);
 	RegisterDataViewInstancer(&default_instancers->data_view_visible,        "visible", false);
@@ -411,7 +413,8 @@ bool Factory::InstanceElementText(Element* parent, const String& in_text)
 	{
 		RMLUI_ZoneScopedNC("InstanceStream", 0xDC143C);
 		auto stream = MakeUnique<StreamMemory>(text.size() + 32);
-		String tag = parent->GetContext()->GetDocumentsBaseTag();
+		Context* context = parent->GetContext();
+		String tag = context ? context->GetDocumentsBaseTag() : "body";
 		String open_tag = "<" + tag + ">";
 		String close_tag = "</" + tag + ">";
 		stream->Write(open_tag.c_str(), open_tag.size());

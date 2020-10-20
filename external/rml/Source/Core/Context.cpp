@@ -284,7 +284,7 @@ ElementDocument* Context::LoadDocumentFromMemory(const String& string, const Str
 	// Open the stream based on the string contents.
 	auto stream = MakeUnique<StreamMemory>((byte*)string.c_str(), string.size());
 
-	stream->SetSourceURL( source_url.c_str() );
+	stream->SetSourceURL( source_url );
 
 	// Load the document from the stream.
 	ElementDocument* document = LoadDocument(stream.get());
@@ -1280,7 +1280,7 @@ public:
 	using container_type = ElementObserverList;
 
 	ElementObserverListBackInserter(ElementObserverList& elements) : elements(&elements) {}
-	ElementObserverListBackInserter& operator=(const Element* element) {
+	ElementObserverListBackInserter& operator=(Element* element) {
 		elements->push_back(element->GetObserverPtr());
 		return *this;
 	}
