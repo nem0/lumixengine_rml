@@ -29,11 +29,11 @@ struct SystemInterface : Rml::SystemInterface {
 	// void JoinPath(String& translated_path, const String& document_path, const String& path);
 	bool LogMessage(Rml::Log::Type type, const Rml::String& message) {
 		if (type == Rml::Log::LT_WARNING)
-			logWarning("Rml") << message.c_str();
+			logWarning("Rml: ", message.c_str());
 		else if (type == Rml::Log::LT_ERROR)
-			logError("Rml") << message.c_str();
+			logError("Rml", message.c_str());
 		else
-			logInfo("Rml") << message.c_str();
+			logInfo("Rml", message.c_str());
 		return true;
 	}
 	// void SetMouseCursor(const String& cursor_name);
