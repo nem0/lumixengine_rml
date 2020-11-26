@@ -52,7 +52,7 @@ struct RMLRenderJob : Renderer::RenderJob {
 
 	void execute() override {
 		for (const TextureUpload& upload : m_texture_uploads) {
-			gpu::createTexture(upload.handle, upload.w, upload.h, 1, gpu::TextureFormat::RGBA8, 0, upload.data.begin(), "rml_texture");
+			gpu::createTexture(upload.handle, upload.w, upload.h, 1, gpu::TextureFormat::RGBA8, gpu::TextureFlags::NONE, upload.data.begin(), "rml_texture");
 		}
 		m_texture_uploads.clear();
 
@@ -61,9 +61,9 @@ struct RMLRenderJob : Renderer::RenderJob {
 		gpu::pushDebugGroup("RML");
 		gpu::BufferHandle vb = gpu::allocBufferHandle(); // TODO reuse
 		gpu::BufferHandle ib = gpu::allocBufferHandle(); // TODO reuse
-		gpu::createBuffer(vb, 0, m_vertices.byte_size(), m_vertices.begin());
-		gpu::createBuffer(ib, 0, m_indices.byte_size(), m_indices.begin());
-		u64 rs = gpu::getBlendStateBits(gpu::BlendFactors::SRC_ALPHA, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE);
+		gpu::createBuffer(vb, gpu::BufferFlags::NONE, m_vertices.byte_size(), m_vertices.begin());
+		gpu::createBuffer(ib, gpu::BufferFlags::NONE, m_indices.byte_size(), m_indices.begin());
+		gpu::StateFlags rs = gpu::getBlendStateBits(gpu::BlendFactors::SRC_ALPHA, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE);
 		gpu::setState(rs);
 		struct {
 			Quat rot;
