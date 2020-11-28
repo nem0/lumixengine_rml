@@ -355,7 +355,7 @@ struct RMLSceneImpl : RMLScene {
 	}
 
 	void serialize(struct OutputMemoryStream& serializer) override {}
-	void deserialize(struct InputMemoryStream& serialize, const struct EntityMap& entity_map) override {}
+	void deserialize(struct InputMemoryStream& serialize, const struct EntityMap& entity_map, i32 version) override {}
 	IPlugin& getPlugin() const override { return m_plugin; }
 	struct Universe& getUniverse() override {
 		return m_universe;
