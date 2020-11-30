@@ -46,10 +46,9 @@ struct SystemInterface : Rml::SystemInterface {
 
 struct RMLSystem : IPlugin {
 	RMLSystem(Engine& engine)
-		: m_engine(engine) {
-		using namespace Reflection;
-		static auto rml_scene = scene("rml", component("rml_canvas", property("Is 3D", &RMLScene::is3D, &RMLScene::set3D)));
-		registerScene(rml_scene);
+		: m_engine(engine)
+	{
+		RMLScene::reflect();
 	}
 
 	~RMLSystem() override {

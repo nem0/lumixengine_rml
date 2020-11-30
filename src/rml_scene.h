@@ -10,6 +10,7 @@ struct RMLScene : IScene {
 	virtual void render(struct Pipeline& pipeline) = 0;
 
 	static UniquePtr<RMLScene> create(IPlugin& plugin, Engine& engine, Universe& universe);
+	static void reflect();
 };
 
 } // namespace Lumix

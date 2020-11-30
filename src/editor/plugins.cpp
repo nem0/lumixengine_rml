@@ -4,8 +4,6 @@
 namespace Lumix {
 
 LUMIX_STUDIO_ENTRY(rml) {
-	app.registerComponent("", "rml_canvas", "RML / Canvas");
-	
 	WorldEditor& editor = app.getWorldEditor();
 	return nullptr;
 }

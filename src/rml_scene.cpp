@@ -223,9 +223,8 @@ struct RMLSceneImpl : RMLScene {
 		, m_plugin(plugin)
 		, m_universe(universe)
 		, m_canvases(engine.getAllocator())
-		, m_render_interface(engine, engine.getAllocator()) {
-		universe.registerComponentType(RML_CANVAS_TYPE, this, &RMLSceneImpl::createCanvas, &RMLSceneImpl::destroyCanvas);
-	}
+		, m_render_interface(engine, engine.getAllocator())
+	{}
 
 	~RMLSceneImpl() override { ASSERT(m_canvases.empty()); }
 
@@ -379,6 +378,16 @@ struct RMLSceneImpl : RMLScene {
 
 UniquePtr<RMLScene> RMLScene::create(IPlugin& plugin, Engine& engine, Universe& universe) {
 	return UniquePtr<RMLSceneImpl>::create(engine.getAllocator(), plugin, engine, universe);
+}
+
+void RMLScene::reflect() {
+	using namespace Reflection;
+	static auto rml_scene = scene("rml", 
+		LUMIX_CMP(RMLSceneImpl, Canvas, "rml_canvas", "RML / Canvas",
+			property("Is 3D", &RMLScene::is3D, &RMLScene::set3D)
+		)
+	);
+	registerScene(rml_scene);
 }
 
 } // namespace Lumix
