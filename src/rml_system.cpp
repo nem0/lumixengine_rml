@@ -41,7 +41,7 @@ struct SystemInterface : Rml::SystemInterface {
 	// void GetClipboardText(String& text);
 	// void ActivateKeyboard();
 	// void DeactivateKeyboard();
-	OS::Timer m_timer;
+	os::Timer m_timer;
 };
 
 struct RMLSystem : IPlugin {

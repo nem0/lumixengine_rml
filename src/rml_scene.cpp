@@ -16,7 +16,7 @@
 
 namespace Lumix {
 
-static const ComponentType RML_CANVAS_TYPE = Reflection::getComponentType("rml_canvas");
+static const ComponentType RML_CANVAS_TYPE = reflection::getComponentType("rml_canvas");
 
 struct RMLRenderJob : Renderer::RenderJob {
 	struct Drawcall {
@@ -151,7 +151,7 @@ struct RenderInterface : Rml::RenderInterface {
 		// TODO use Rml::GetTextureSourceList();
 		while (t->isEmpty()) {
 			m_engine.getFileSystem().processCallbacks();
-			OS::sleep(1);
+			os::sleep(1);
 		}
 		if (t->isFailure()) return false;
 		texture_dimensions.x = t->width;
