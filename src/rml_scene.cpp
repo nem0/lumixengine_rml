@@ -282,7 +282,7 @@ struct RMLSceneImpl : RMLScene {
 			const Vec2 canvas_size((float)vp.w, (float)vp.h);
 			canvas.context->SetDimensions({vp.w, vp.h});
 			const Transform& tr = m_universe.getTransform(canvas.entity);
-			if (m_render_interface.beginRender(*renderer, canvas_size, ub, canvas.is_3d, (tr.pos - vp.pos).toFloat(), tr.rot, renderer->getAllocator())) {
+			if (m_render_interface.beginRender(*renderer, canvas_size, ub, canvas.is_3d, Vec3(tr.pos - vp.pos), tr.rot, renderer->getAllocator())) {
 				canvas.context->Render();
 				m_render_interface.endRender();
 
@@ -311,15 +311,15 @@ struct RMLSceneImpl : RMLScene {
 			Vec3 dir;
 			vp.getRay({x, y}, origin, dir);
 			float t;
-			if (!getRayPlaneIntersecion((origin - cam_pos).toFloat(), dir, (canvas_pos - cam_pos).toFloat(), normal, t)) return IVec2((i32)x, (i32)y);
+			if (!getRayPlaneIntersecion(Vec3(origin - cam_pos), dir, Vec3(canvas_pos - cam_pos), normal, t)) return IVec2((i32)x, (i32)y);
 
 			const DVec3 hit = origin + dir * t;
 			const Vec3 xaxis = canvas_rot.rotate(Vec3(1, 0, 0));
 			const Vec3 yaxis = canvas_rot.rotate(Vec3(0, 1, 0));
 
-			const Vec3 rel_hit_pos = (hit - canvas_pos).toFloat();
-			float xproj = dotProduct(rel_hit_pos, xaxis);
-			float yproj = dotProduct(rel_hit_pos, yaxis);
+			const Vec3 rel_hit_pos = Vec3(hit - canvas_pos);
+			float xproj = dot(rel_hit_pos, xaxis);
+			float yproj = dot(rel_hit_pos, yaxis);
 			return {int(xproj * vp.w), int((1 - yproj) * vp.h)};
 		}
 
