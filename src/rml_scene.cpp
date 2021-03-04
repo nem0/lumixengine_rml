@@ -383,11 +383,9 @@ UniquePtr<RMLScene> RMLScene::create(IPlugin& plugin, Engine& engine, Universe& 
 }
 
 void RMLScene::reflect() {
-	LUMIX_SCENE(RMLSceneImpl, "rml",
-		LUMIX_CMP(Canvas, "rml_canvas", "RML / Canvas",
-			property("Is 3D", &RMLScene::is3D, &RMLScene::set3D)
-		)
-	);
+	LUMIX_SCENE(RMLSceneImpl, "rml")
+		.LUMIX_CMP(Canvas, "rml_canvas", "RML / Canvas")
+			.prop<&RMLScene::is3D, &RMLScene::set3D>("Is 3D");
 }
 
 } // namespace Lumix
