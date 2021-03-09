@@ -237,7 +237,7 @@ struct RMLSceneImpl : RMLScene {
 		StaticString<64> context_name((u64)this, "#", entity.index);
 		c.context = Rml::CreateContext(context_name.data, Rml::Vector2i(800, 600), &m_render_interface);
 		OutputMemoryStream content(m_engine.getAllocator());
-		if (m_engine.getFileSystem().getContentSync(Path("rml/demo.rml"), Ref(content))) {
+		if (m_engine.getFileSystem().getContentSync(Path("rml/demo.rml"), content)) {
 			content.write((char)0);
 			Rml::String str;
 			str = (const char*)content.data();

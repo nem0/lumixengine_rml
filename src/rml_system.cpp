@@ -8,6 +8,7 @@
 #include "engine/os.h"
 #include "engine/plugin.h"
 #include "engine/reflection.h"
+#include "engine/string.h"
 #include "renderer/pipeline.h"
 #include "renderer/render_scene.h"
 #include "renderer/renderer.h"
