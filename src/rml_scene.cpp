@@ -54,7 +54,8 @@ struct RMLRenderJob : Renderer::RenderJob {
 
 	void execute() override {
 		for (const TextureUpload& upload : m_texture_uploads) {
-			gpu::createTexture(upload.handle, upload.w, upload.h, 1, gpu::TextureFormat::RGBA8, gpu::TextureFlags::NONE, upload.data.begin(), "rml_texture");
+			gpu::createTexture(upload.handle, upload.w, upload.h, 1, gpu::TextureFormat::RGBA8, gpu::TextureFlags::NONE, "rml_texture");
+			gpu::update(upload.handle, 0, 0, 0, 0, upload.w, upload.h, gpu::TextureFormat::RGBA8, upload.data.begin(), upload.data.byte_size());
 		}
 		m_texture_uploads.clear();
 
