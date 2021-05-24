@@ -297,7 +297,7 @@ struct RMLSceneImpl : RMLScene {
 
 	IVec2 transformMousePos(const Canvas& canvas, float x, float y) const {
 		if (canvas.is_3d) {
-			RenderScene* render_scene = static_cast<RenderScene*>(m_universe.getScene(crc32("renderer")));
+			RenderScene* render_scene = static_cast<RenderScene*>(m_universe.getScene("renderer"));
 			ASSERT(render_scene);
 			EntityPtr cam_entity = render_scene->getActiveCamera();
 			if (!cam_entity.isValid()) return IVec2((i32)x, (i32)y);

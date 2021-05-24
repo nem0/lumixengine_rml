@@ -19,7 +19,7 @@ namespace Lumix {
 struct RMLRenderPlugin : RenderPlugin {
 	void renderUI(Pipeline& pipeline) override {
 		Universe& universe = pipeline.getScene()->getUniverse();
-		RMLScene* scene = static_cast<RMLScene*>(universe.getScene(crc32("RML")));
+		RMLScene* scene = static_cast<RMLScene*>(universe.getScene("RML"));
 		scene->render(pipeline);
 	}
 };
