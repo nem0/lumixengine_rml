@@ -1,7 +1,6 @@
 #define LUMIX_NO_CUSTOM_CRT
 #include "rml_scene.h"
 #include "RmlUi/Core.h"
-#include "engine/crc32.h"
 #include "engine/engine.h"
 #include "engine/geometry.h"
 #include "engine/input_system.h"

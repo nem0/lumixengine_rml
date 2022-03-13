@@ -2,7 +2,6 @@
 #include "rml_system.h"
 #include "RmlUi/Core.h"
 #include "engine/allocator.h"
-#include "engine/crc32.h"
 #include "engine/engine.h"
 #include "engine/log.h"
 #include "engine/os.h"
