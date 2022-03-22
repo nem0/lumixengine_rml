@@ -95,7 +95,7 @@ struct RMLRenderJob : Renderer::RenderJob {
 			gpu::bindIndexBuffer(ib);
 			gpu::bindVertexBuffer(0, vb, dc.vertex_offset * sizeof(Rml::Vertex), sizeof(Rml::Vertex));
 			gpu::bindVertexBuffer(1, gpu::INVALID_BUFFER, 0, 0);
-			gpu::drawTriangles(dc.index_offset * sizeof(int), dc.num_indices, gpu::DataType::U32);
+			gpu::drawIndexed(gpu::PrimitiveType::TRIANGLES, dc.index_offset * sizeof(int), dc.num_indices, gpu::DataType::U32);
 		}
 		gpu::destroy(vb);
 		gpu::destroy(ib);
