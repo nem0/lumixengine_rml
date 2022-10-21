@@ -112,8 +112,8 @@ struct RMLRenderJob : Renderer::RenderJob {
 	Array<TextureUpload> m_texture_uploads;
 };
 
-struct RenderInterface : Rml::RenderInterface {
-	RenderInterface(Engine& engine, IAllocator& allocator)
+struct RmlRenderInterface : Rml::RenderInterface {
+	RmlRenderInterface(Engine& engine, IAllocator& allocator)
 		: m_allocator(allocator)
 		, m_engine(engine) {}
 
@@ -136,7 +136,7 @@ struct RenderInterface : Rml::RenderInterface {
 		memcpy(&m_job->m_indices[dc.index_offset], indices, sizeof(indices[0]) * num_indices);
 	}
 
-	~RenderInterface() {
+	~RmlRenderInterface() {
 		if (m_shader) m_shader->decRefCount();
 	}
 
@@ -377,7 +377,7 @@ struct RMLSceneImpl : RMLScene {
 	Engine& m_engine;
 	IPlugin& m_plugin;
 	EntityPtr m_focused = INVALID_ENTITY;
-	RenderInterface m_render_interface;
+	RmlRenderInterface m_render_interface;
 	Universe& m_universe;
 	Array<Canvas> m_canvases;
 };

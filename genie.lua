@@ -8,7 +8,7 @@ project "rml"
 		"external/rml/Source/**.*",
 		"external/rml/Include/**.*"
 	}
-	links { "engine" }
+	links { "engine", "renderer" }
 	includedirs { "external/rml/Include", "../../external/freetype/include" }
 	defines { "RMLUI_STATIC_LIB=1", "RMLUI_USE_CUSTOM_RTTI" }
 	defaultConfigurations()
