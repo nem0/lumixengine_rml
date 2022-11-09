@@ -3,9 +3,6 @@
 
 namespace Lumix {
 
-LUMIX_STUDIO_ENTRY(rml) {
-	WorldEditor& editor = app.getWorldEditor();
-	return nullptr;
-}
+LUMIX_STUDIO_ENTRY(rml) { return nullptr; }
 
 } // namespace Lumix

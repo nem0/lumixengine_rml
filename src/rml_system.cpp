@@ -18,7 +18,7 @@ namespace Lumix {
 struct RMLRenderPlugin : RenderPlugin {
 	void renderUI(Pipeline& pipeline) override {
 		Universe& universe = pipeline.getScene()->getUniverse();
-		RMLScene* scene = static_cast<RMLScene*>(universe.getScene("RML"));
+		RMLScene* scene = static_cast<RMLScene*>(universe.getScene("rml"));
 		scene->render(pipeline);
 	}
 };
@@ -67,7 +67,7 @@ struct RMLSystem : IPlugin {
 	}
 
 
-	const char* getName() const override { return "RML"; }
+	const char* getName() const override { return "rml"; }
 	u32 getVersion() const override { return 0; }
 	void serialize(OutputMemoryStream& serializer) const override {}
 	bool deserialize(u32 version, InputMemoryStream& serializer) override { return true; }

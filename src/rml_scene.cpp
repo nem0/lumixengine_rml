@@ -9,6 +9,7 @@
 #include "engine/reflection.h"
 #include "engine/resource_manager.h"
 #include "engine/universe.h"
+#include "renderer/draw_stream.h"
 #include "renderer/pipeline.h"
 #include "renderer/render_scene.h"
 #include "renderer/renderer.h"
@@ -19,121 +20,51 @@ namespace Lumix {
 
 static const ComponentType RML_CANVAS_TYPE = reflection::getComponentType("rml_canvas");
 
-struct RMLRenderJob : Renderer::RenderJob {
-	struct Drawcall {
-		u32 vertex_offset;
-		u32 index_offset;
-		u32 num_vertices;
-		u32 num_indices;
-		Rml::TextureHandle texture;
-		Rml::Vector2f translation;
-		IVec4 scissor;
-		bool enable_scissor;
-		bool is_3d;
-		Vec3 pos;
-		Quat rot;
-		Renderer::TransientSlice ub;
-	};
-
-	struct TextureUpload {
-		TextureUpload(IAllocator& allocator)
-			: data(allocator) {}
-		gpu::TextureHandle handle;
-		Array<u8> data;
-		u32 w;
-		u32 h;
-	};
-
-	RMLRenderJob(Renderer& renderer, IAllocator& allocator)
-		: m_drawcalls(allocator)
-		, m_renderer(renderer)
-		, m_vertices(allocator)
-		, m_indices(allocator)
-		, m_texture_uploads(allocator) {}
-
-	void setup() override {
-		struct UBData {
-			Quat rot;
-			Vec4 pos;
-			Vec2 canvas_size;
-			Rml::Vector2f translation;
-		};
-
-		for (Drawcall& dc : m_drawcalls) {
-			dc.ub = m_renderer.allocUniform(sizeof(UBData));
-			UBData* data = (UBData*)dc.ub.ptr;
-			data->canvas_size = m_canvas_size;
-			data->pos = Vec4(dc.pos, 1);
-			data->rot = dc.rot;
-			data->translation = dc.translation;
-		}
-	}
-
-	void execute() override {
-		for (const TextureUpload& upload : m_texture_uploads) {
-			gpu::createTexture(upload.handle, upload.w, upload.h, 1, gpu::TextureFormat::RGBA8, gpu::TextureFlags::NONE, "rml_texture");
-			gpu::update(upload.handle, 0, 0, 0, 0, upload.w, upload.h, gpu::TextureFormat::RGBA8, upload.data.begin(), upload.data.byte_size());
-		}
-		m_texture_uploads.clear();
-
-		if (m_indices.empty()) return;
-
-		gpu::pushDebugGroup("RML");
-		gpu::BufferHandle vb = gpu::allocBufferHandle(); // TODO reuse
-		gpu::BufferHandle ib = gpu::allocBufferHandle(); // TODO reuse
-		gpu::createBuffer(vb, gpu::BufferFlags::NONE, m_vertices.byte_size(), m_vertices.begin());
-		gpu::createBuffer(ib, gpu::BufferFlags::NONE, m_indices.byte_size(), m_indices.begin());
-		gpu::StateFlags rs = gpu::getBlendStateBits(gpu::BlendFactors::SRC_ALPHA, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE);
-		gpu::setState(rs);
-		for (const Drawcall& dc : m_drawcalls) {
-			gpu::useProgram(dc.is_3d ? m_program_3D : m_program_2D);
-
-			gpu::TextureHandle t = (gpu::TextureHandle)dc.texture;
-			gpu::bindTextures(&t, 0, 1);
-
-			gpu::bindUniformBuffer(UniformBuffer::DRAWCALL, dc.ub.buffer, dc.ub.offset, dc.ub.size);
-			gpu::bindIndexBuffer(ib);
-			gpu::bindVertexBuffer(0, vb, dc.vertex_offset * sizeof(Rml::Vertex), sizeof(Rml::Vertex));
-			gpu::bindVertexBuffer(1, gpu::INVALID_BUFFER, 0, 0);
-			gpu::drawIndexed(gpu::PrimitiveType::TRIANGLES, dc.index_offset * sizeof(int), dc.num_indices, gpu::DataType::U32);
-		}
-		gpu::destroy(vb);
-		gpu::destroy(ib);
-		gpu::popDebugGroup();
-	}
-
-	Renderer& m_renderer;
-	gpu::ProgramHandle m_program_3D;
-	gpu::ProgramHandle m_program_2D;
-	Vec2 m_canvas_size;
-	Array<Drawcall> m_drawcalls;
-	Array<Rml::Vertex> m_vertices;
-	Array<int> m_indices;
-	Array<TextureUpload> m_texture_uploads;
-};
-
 struct RmlRenderInterface : Rml::RenderInterface {
 	RmlRenderInterface(Engine& engine, IAllocator& allocator)
 		: m_allocator(allocator)
 		, m_engine(engine) {}
 
 	void RenderGeometry(Rml::Vertex* vertices, int num_vertices, int* indices, int num_indices, Rml::TextureHandle texture, const Rml::Vector2f& translation) override {
-		RMLRenderJob::Drawcall& dc = m_job->m_drawcalls.emplace();
-		dc.index_offset = m_job->m_indices.size();
-		dc.vertex_offset = m_job->m_vertices.size();
-		dc.num_indices = num_indices;
-		dc.num_vertices = num_vertices;
-		dc.texture = texture;
-		dc.translation = translation;
-		dc.scissor = m_scissor;
-		dc.enable_scissor = m_scissor_enabled;
-		dc.is_3d = m_is_3d;
-		dc.rot = m_rot;
-		dc.pos = m_pos;
-		m_job->m_vertices.resize(m_job->m_vertices.size() + num_vertices);
-		m_job->m_indices.resize(m_job->m_indices.size() + num_indices);
-		memcpy(&m_job->m_vertices[dc.vertex_offset], vertices, sizeof(vertices[0]) * num_vertices);
-		memcpy(&m_job->m_indices[dc.index_offset], indices, sizeof(indices[0]) * num_indices);
+		if (!num_indices) return;
+		
+		struct UBData {
+			Quat rot;
+			Vec4 pos;
+			Vec2 canvas_size;
+			Rml::Vector2f translation;
+		} data;
+		Renderer::TransientSlice ub = m_renderer->allocUniform(sizeof(UBData));
+		data.canvas_size = m_canvas_size;
+		data.pos = Vec4(m_pos, 1);
+		data.rot = m_rot;
+		data.translation = translation;		
+		memcpy(ub.ptr, &data, sizeof(data));
+
+		gpu::BufferHandle vb = gpu::allocBufferHandle(); // TODO reuse
+		gpu::BufferHandle ib = gpu::allocBufferHandle(); // TODO reuse
+
+		const Renderer::MemRef vertices_mem = m_renderer->copy(vertices, num_vertices * sizeof(vertices[0]));
+		const Renderer::MemRef indices_mem = m_renderer->copy(indices, num_indices * sizeof(indices[0]));
+
+		m_draw_stream->createBuffer(vb, gpu::BufferFlags::NONE, vertices_mem.size, vertices_mem.data);
+		m_draw_stream->createBuffer(ib, gpu::BufferFlags::NONE, indices_mem.size, indices_mem.data);
+		m_draw_stream->useProgram(m_is_3d ? m_program_3D : m_program_2D);
+
+		gpu::TextureHandle t = (gpu::TextureHandle)texture;
+		m_draw_stream->bindTextures(&t, 0, 1);
+
+		m_draw_stream->bindUniformBuffer(UniformBuffer::DRAWCALL, ub.buffer, ub.offset, ub.size);
+		m_draw_stream->bindIndexBuffer(ib);
+		m_draw_stream->bindVertexBuffer(0, vb, 0, sizeof(Rml::Vertex));
+		m_draw_stream->bindVertexBuffer(1, gpu::INVALID_BUFFER, 0, 0);
+		m_draw_stream->drawIndexed(0, num_indices, gpu::DataType::U32);
+		
+		m_draw_stream->freeMemory(vertices_mem.data, m_renderer->getAllocator());
+		m_draw_stream->freeMemory(indices_mem.data, m_renderer->getAllocator());
+		
+		m_draw_stream->destroy(vb);
+		m_draw_stream->destroy(ib);
 	}
 
 	~RmlRenderInterface() {
@@ -169,13 +100,13 @@ struct RmlRenderInterface : Rml::RenderInterface {
 	}
 
 	bool GenerateTexture(Rml::TextureHandle& texture_handle, const Rml::byte* source, const Rml::Vector2i& source_dimensions) override {
-		RMLRenderJob::TextureUpload& upload = m_job->m_texture_uploads.emplace(m_allocator);
-		upload.handle = gpu::allocTextureHandle();
-		upload.w = source_dimensions.x;
-		upload.h = source_dimensions.y;
-		upload.data.resize(source_dimensions.x * source_dimensions.y * 4);
-		texture_handle = (uintptr_t)upload.handle;
-		memcpy(upload.data.begin(), source, upload.data.byte_size());
+		gpu::TextureHandle handle = gpu::allocTextureHandle();
+		
+		const Renderer::MemRef mem = m_renderer->copy(source, source_dimensions.x * source_dimensions.y * 4);
+
+		m_draw_stream->createTexture(handle, source_dimensions.x, source_dimensions.y, 1, gpu::TextureFormat::RGBA8, gpu::TextureFlags::NONE, "rml_texture");
+		m_draw_stream->update(handle, 0, 0, 0, 0, source_dimensions.x, source_dimensions.y, gpu::TextureFormat::RGBA8, mem.data, mem.size);
+		m_draw_stream->freeMemory(mem.data, m_renderer->getAllocator());
 		return true;
 	}
 
@@ -183,24 +114,24 @@ struct RmlRenderInterface : Rml::RenderInterface {
 
 	// void SetTransform(const Matrix4f* transform);
 
-	void endRender() {
-		gpu::VertexDecl decl;
-		decl.addAttribute(0, 0, 2, gpu::AttributeType::FLOAT, 0);
-		decl.addAttribute(1, 8, 4, gpu::AttributeType::U8, gpu::Attribute::NORMALIZED);
-		decl.addAttribute(2, 12, 2, gpu::AttributeType::FLOAT, 0);
-		m_job->m_program_2D = m_shader->getProgram(decl, 0);
-		m_job->m_program_3D = m_shader->getProgram(decl, m_3D_define);
-	}
-
 	bool beginRender(Renderer& renderer, const Vec2& canvas_size, bool is_3D, const Vec3& pos, const Quat& rot, IAllocator& allocator) {
 		if (!m_shader->isReady()) return false;
 
+		gpu::VertexDecl decl(gpu::PrimitiveType::TRIANGLES);
+		decl.addAttribute(0, 0, 2, gpu::AttributeType::FLOAT, 0);
+		decl.addAttribute(1, 8, 4, gpu::AttributeType::U8, gpu::Attribute::NORMALIZED);
+		decl.addAttribute(2, 12, 2, gpu::AttributeType::FLOAT, 0);
+		gpu::StateFlags rs = gpu::getBlendStateBits(gpu::BlendFactors::SRC_ALPHA, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE, gpu::BlendFactors::ONE);
+		m_program_2D = m_shader->getProgram(rs, decl, 0);
+		m_program_3D = m_shader->getProgram(rs, decl, m_3D_define);
 		m_is_3d = is_3D;
 		m_pos = pos;
 		m_rot = rot;
 		
-		m_job = &renderer.createJob<RMLRenderJob>(renderer, allocator);
-		m_job->m_canvas_size = canvas_size;
+		m_draw_stream = &renderer.createDrawStreamJob();
+		m_renderer = &renderer;
+		m_canvas_size = canvas_size;
+		
 		m_scissor_enabled = false;
 		return true;
 	}
@@ -210,11 +141,15 @@ struct RmlRenderInterface : Rml::RenderInterface {
 	Quat m_rot;
 	bool m_is_3d;
 	Engine& m_engine;
+	Renderer* m_renderer = nullptr;
 	u32 m_3D_define = 0;
-	RMLRenderJob* m_job = nullptr;
+	DrawStream* m_draw_stream = nullptr;
 	bool m_scissor_enabled = false;
 	IVec4 m_scissor;
 	Shader* m_shader = nullptr;
+	Vec2 m_canvas_size;
+	gpu::ProgramHandle m_program_3D;
+	gpu::ProgramHandle m_program_2D;
 };
 
 struct RMLSceneImpl : RMLScene {
@@ -278,20 +213,16 @@ struct RMLSceneImpl : RMLScene {
 		if (!m_render_interface.m_shader) {
 			m_render_interface.m_shader = m_engine.getResourceManager().load<Shader>(Path("pipelines/rml.shd"));
 		}
-		Renderer* renderer = static_cast<Renderer*>(m_engine.getPluginManager().getPlugin("renderer"));
-		m_render_interface.m_3D_define = 1 << renderer->getShaderDefineIdx("SPATIAL");
+		Renderer& renderer = pipeline.getRenderer();
+		m_render_interface.m_3D_define = 1 << renderer.getShaderDefineIdx("SPATIAL");
 		const Viewport vp = pipeline.getViewport();
 
 		for (const Canvas& canvas : m_canvases) {
 			const Vec2 canvas_size((float)vp.w, (float)vp.h);
 			canvas.context->SetDimensions({vp.w, vp.h});
 			const Transform& tr = m_universe.getTransform(canvas.entity);
-			if (m_render_interface.beginRender(*renderer, canvas_size, canvas.is_3d, Vec3(tr.pos - vp.pos), tr.rot, renderer->getAllocator())) {
+			if (m_render_interface.beginRender(renderer, canvas_size, canvas.is_3d, Vec3(tr.pos - vp.pos), tr.rot, renderer.getAllocator())) {
 				canvas.context->Render();
-				m_render_interface.endRender();
-
-				renderer->queue(*m_render_interface.m_job, 0);
-				m_render_interface.m_job = nullptr;
 			}
 		}
 	}
