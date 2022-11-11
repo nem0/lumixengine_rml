@@ -128,7 +128,7 @@ struct RmlRenderInterface : Rml::RenderInterface {
 		m_pos = pos;
 		m_rot = rot;
 		
-		m_draw_stream = &renderer.createDrawStreamJob();
+		m_draw_stream = &renderer.getDrawStream().createSubstream();
 		m_renderer = &renderer;
 		m_canvas_size = canvas_size;
 		
