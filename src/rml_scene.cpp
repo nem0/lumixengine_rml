@@ -284,6 +284,9 @@ struct RMLSceneImpl : RMLScene {
 							}
 						}
 						break;
+					default:
+						// TODO text and stuff
+						break;
 				}
 			}
 		}
