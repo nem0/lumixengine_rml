@@ -8,7 +8,7 @@
 #include "engine/os.h"
 #include "engine/reflection.h"
 #include "engine/resource_manager.h"
-#include "engine/universe.h"
+#include "engine/world.h"
 #include "renderer/draw_stream.h"
 #include "renderer/pipeline.h"
 #include "renderer/render_scene.h"
@@ -160,10 +160,10 @@ struct RMLSceneImpl : RMLScene {
 		Rml::Context* context;
 	};
 
-	RMLSceneImpl(IPlugin& plugin, Engine& engine, Universe& universe)
+	RMLSceneImpl(IPlugin& plugin, Engine& engine, World& world)
 		: m_engine(engine)
 		, m_plugin(plugin)
-		, m_universe(universe)
+		, m_world(world)
 		, m_canvases(engine.getAllocator())
 		, m_render_interface(engine, engine.getAllocator())
 	{}
@@ -184,7 +184,7 @@ struct RMLSceneImpl : RMLScene {
 			Rml::ElementDocument* doc = c.context->LoadDocumentFromMemory(str, "rml/demo.rml");
 			if (doc) doc->Show();
 		}
-		m_universe.onComponentCreated(entity, RML_CANVAS_TYPE, this);
+		m_world.onComponentCreated(entity, RML_CANVAS_TYPE, this);
 	}
 
 	void destroyCanvas(EntityRef entity) {
@@ -197,7 +197,7 @@ struct RMLSceneImpl : RMLScene {
 			}
 			return false;
 		});
-		m_universe.onComponentDestroyed(entity, RML_CANVAS_TYPE, this);
+		m_world.onComponentDestroyed(entity, RML_CANVAS_TYPE, this);
 	}
 
 	Canvas* getCanvas(EntityRef e) {
@@ -220,7 +220,7 @@ struct RMLSceneImpl : RMLScene {
 		for (const Canvas& canvas : m_canvases) {
 			const Vec2 canvas_size((float)vp.w, (float)vp.h);
 			canvas.context->SetDimensions({vp.w, vp.h});
-			const Transform& tr = m_universe.getTransform(canvas.entity);
+			const Transform& tr = m_world.getTransform(canvas.entity);
 			if (m_render_interface.beginRender(renderer, canvas_size, canvas.is_3d, Vec3(tr.pos - vp.pos), tr.rot, renderer.getAllocator())) {
 				canvas.context->Render();
 			}
@@ -231,16 +231,16 @@ struct RMLSceneImpl : RMLScene {
 
 	IVec2 transformMousePos(const Canvas& canvas, float x, float y) const {
 		if (canvas.is_3d) {
-			RenderScene* render_scene = static_cast<RenderScene*>(m_universe.getScene("renderer"));
+			RenderScene* render_scene = static_cast<RenderScene*>(m_world.getScene("renderer"));
 			ASSERT(render_scene);
 			EntityPtr cam_entity = render_scene->getActiveCamera();
 			if (!cam_entity.isValid()) return IVec2((i32)x, (i32)y);
 
 			const Camera& cam = render_scene->getCamera((EntityRef)cam_entity);
 			const Viewport vp = render_scene->getCameraViewport((EntityRef)cam_entity);
-			const DVec3 cam_pos = m_universe.getPosition((EntityRef)cam_entity);
-			const DVec3 canvas_pos = m_universe.getPosition(canvas.entity);
-			const Quat canvas_rot = m_universe.getRotation(canvas.entity);
+			const DVec3 cam_pos = m_world.getPosition((EntityRef)cam_entity);
+			const DVec3 canvas_pos = m_world.getPosition(canvas.entity);
+			const Quat canvas_rot = m_world.getRotation(canvas.entity);
 			const Vec3 normal = canvas_rot.rotate(Vec3(0, 0, 1));
 			DVec3 origin;
 			Vec3 dir;
@@ -296,8 +296,8 @@ struct RMLSceneImpl : RMLScene {
 	void serialize(struct OutputMemoryStream& serializer) override {}
 	void deserialize(struct InputMemoryStream& serialize, const struct EntityMap& entity_map, i32 version) override {}
 	IPlugin& getPlugin() const override { return m_plugin; }
-	struct Universe& getUniverse() override {
-		return m_universe;
+	struct World& getWorld() override {
+		return m_world;
 	}
 
 	void clear() override {
@@ -312,12 +312,12 @@ struct RMLSceneImpl : RMLScene {
 	IPlugin& m_plugin;
 	EntityPtr m_focused = INVALID_ENTITY;
 	RmlRenderInterface m_render_interface;
-	Universe& m_universe;
+	World& m_world;
 	Array<Canvas> m_canvases;
 };
 
-UniquePtr<RMLScene> RMLScene::create(IPlugin& plugin, Engine& engine, Universe& universe) {
-	return UniquePtr<RMLSceneImpl>::create(engine.getAllocator(), plugin, engine, universe);
+UniquePtr<RMLScene> RMLScene::create(IPlugin& plugin, Engine& engine, World& world) {
+	return UniquePtr<RMLSceneImpl>::create(engine.getAllocator(), plugin, engine, world);
 }
 
 void RMLScene::reflect() {

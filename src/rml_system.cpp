@@ -17,8 +17,8 @@ namespace Lumix {
 
 struct RMLRenderPlugin : RenderPlugin {
 	void renderUI(Pipeline& pipeline) override {
-		Universe& universe = pipeline.getScene()->getUniverse();
-		RMLScene* scene = static_cast<RMLScene*>(universe.getScene("rml"));
+		World& world = pipeline.getScene()->getWorld();
+		RMLScene* scene = static_cast<RMLScene*>(world.getScene("rml"));
 		scene->render(pipeline);
 	}
 };
@@ -82,7 +82,7 @@ struct RMLSystem : IPlugin {
 		Rml::LoadFontFace("rml/Delicious-Roman.otf");
 	}
 
-	void createScenes(Universe& universe) override { universe.addScene(RMLScene::create(*this, m_engine, universe)); }
+	void createScenes(World& world) override { world.addScene(RMLScene::create(*this, m_engine, world)); }
 
 	Engine& m_engine;
 	SystemInterface m_system_interface;
