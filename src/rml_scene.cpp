@@ -261,7 +261,7 @@ struct RMLSceneImpl : RMLScene {
 		return IVec2((i32)x, (i32)y);
 	}
 
-	void update(float time_delta, bool paused) override {
+	void update(float time_delta) override {
 		const Canvas* focused = m_focused.isValid() ? getCanvas((EntityRef)m_focused) : nullptr;
 		if (focused) {
 			InputSystem& is = m_engine.getInputSystem();
