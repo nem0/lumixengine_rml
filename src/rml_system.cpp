@@ -17,8 +17,8 @@ namespace Lumix {
 struct RMLRenderPlugin : RenderPlugin {
 	void renderUI(Pipeline& pipeline) override {
 		World& world = pipeline.getModule()->getWorld();
-		RMLModule* scene = static_cast<RMLModule*>(world.getModule("rml"));
-		scene->render(pipeline);
+		RMLModule* module = static_cast<RMLModule*>(world.getModule("rml"));
+		module->render(pipeline);
 	}
 };
 
