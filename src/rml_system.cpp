@@ -1,5 +1,4 @@
 #define LUMIX_NO_CUSTOM_CRT
-#include "rml_system.h"
 #include "RmlUi/Core.h"
 #include "engine/allocator.h"
 #include "engine/engine.h"
@@ -9,16 +8,16 @@
 #include "engine/reflection.h"
 #include "engine/string.h"
 #include "renderer/pipeline.h"
-#include "renderer/render_scene.h"
+#include "renderer/render_module.h"
 #include "renderer/renderer.h"
-#include "rml_scene.h"
+#include "rml_module.h"
 
 namespace Lumix {
 
 struct RMLRenderPlugin : RenderPlugin {
 	void renderUI(Pipeline& pipeline) override {
-		World& world = pipeline.getScene()->getWorld();
-		RMLScene* scene = static_cast<RMLScene*>(world.getScene("rml"));
+		World& world = pipeline.getModule()->getWorld();
+		RMLModule* scene = static_cast<RMLModule*>(world.getModule("rml"));
 		scene->render(pipeline);
 	}
 };
@@ -44,22 +43,22 @@ struct SystemInterface : Rml::SystemInterface {
 	os::Timer m_timer;
 };
 
-struct RMLSystem : IPlugin {
+struct RMLSystem : ISystem {
 	RMLSystem(Engine& engine)
 		: m_engine(engine)
 	{
-		RMLScene::reflect();
+		RMLModule::reflect();
 	}
 
 	~RMLSystem() override {
-		IPlugin* renderer = m_engine.getPluginManager().getPlugin("renderer");
+		ISystem* renderer = m_engine.getSystemManager().getSystem("renderer");
 		if (renderer) {
 			((Renderer*)renderer)->removePlugin(m_render_plugin);
 		}
 		Rml::Shutdown();
 	}
 
-	void pluginAdded(IPlugin& plugin) override {
+	void systemAdded(ISystem& plugin) override {
 		if (equalStrings(plugin.getName(), "renderer")) {
 			Renderer& r = (Renderer&)plugin;
 			r.addPlugin(m_render_plugin);
@@ -68,9 +67,8 @@ struct RMLSystem : IPlugin {
 
 
 	const char* getName() const override { return "rml"; }
-	u32 getVersion() const override { return 0; }
 	void serialize(OutputMemoryStream& serializer) const override {}
-	bool deserialize(u32 version, InputMemoryStream& serializer) override { return true; }
+	bool deserialize(i32 version, InputMemoryStream& serializer) override { return version == 0; }
 
 	void init() override {
 		Rml::SetSystemInterface(&m_system_interface);
@@ -82,19 +80,15 @@ struct RMLSystem : IPlugin {
 		Rml::LoadFontFace("rml/Delicious-Roman.otf");
 	}
 
-	void createScenes(World& world) override { world.addScene(RMLScene::create(*this, m_engine, world)); }
+	void createModules(World& world) override { world.addModule(RMLModule::create(*this, m_engine, world)); }
 
 	Engine& m_engine;
 	SystemInterface m_system_interface;
 	RMLRenderPlugin m_render_plugin;
 };
 
-IPlugin* createRMLSystem(Engine& engine) {
-	return LUMIX_NEW(engine.getAllocator(), RMLSystem)(engine);
-}
-
 LUMIX_PLUGIN_ENTRY(rml) {
-	return createRMLSystem(engine);
+	return LUMIX_NEW(engine.getAllocator(), RMLSystem)(engine);
 }
 
 } // namespace Lumix
