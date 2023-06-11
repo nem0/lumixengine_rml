@@ -175,6 +175,8 @@ struct RMLModuleImpl : RMLModule {
 		}
 	}
 
+	const char* getName() const override { return "rml"; }
+
 	void createCanvas(EntityRef entity) {
 		if (!m_focused.isValid()) m_focused = entity;
 		Canvas& c = m_canvases.emplace();
