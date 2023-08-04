@@ -70,7 +70,7 @@ struct RMLSystem : ISystem {
 	void serialize(OutputMemoryStream& serializer) const override {}
 	bool deserialize(i32 version, InputMemoryStream& serializer) override { return version == 0; }
 
-	void init() override {
+	void initBegin() override {
 		Rml::SetSystemInterface(&m_system_interface);
 		Rml::Initialise();
 		// Rml::LoadFontFace("editor/fonts/NotoSans-Regular.ttf", true);
