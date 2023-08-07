@@ -272,9 +272,8 @@ struct RMLModuleImpl : RMLModule {
 		const Canvas* focused = m_focused.isValid() ? getCanvas((EntityRef)m_focused) : nullptr;
 		if (focused) {
 			InputSystem& is = m_engine.getInputSystem();
-			const InputSystem::Event* events = is.getEvents();
-			for (i32 i = 0, c = is.getEventsCount(); i < c; ++i) {
-				const InputSystem::Event& e = events[i];
+			Span<const InputSystem::Event> events = is.getEvents();
+			for (const InputSystem::Event& e : events) {
 				switch (e.type) {
 					case InputSystem::Event::AXIS:
 						if (e.device->type == InputSystem::Device::MOUSE) {
